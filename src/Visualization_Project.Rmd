@@ -1,0 +1,268 @@
+---
+title: "VISUALIZATION PROJECT UNIT 1"
+author: "SHREYAN CHAKRABORTY"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+chess_dataset<-read.csv('C:/Users/91974/Desktop/cmi study/Chess games stats.csv')
+head(chess_dataset)
+summary(chess_dataset)
+attach(chess_dataset)
+Op=array(chess_dataset["Opening.Ply"])
+counter<-c(rep(0,28))
+for(i in 1:18637){for(j in 1:28){
+    if(Opening.Ply[i]==j){counter[j]<-counter[j]+1}    
+}}
+Mop<-max(Opening.Ply)
+CO<-as.data.frame(counter)
+N_PLY<-c(seq(1,28,1))
+CO["OPENING_PLY"]<-N_PLY
+
+```
+
+## Plots
+
+Some of the useful plots are as follows:
+
+```{r}
+ggplot(chess_dataset, aes(x=(White.Rating), y=(White.Centi.pawn.Loss))) +
+  geom_point(col="blue",size=0.5)+
+     labs(title="ACCURACY OF GAMES")+
+     xlab("White Rating")+
+    ylab("Average Centipawn Loss")
+
+
+
+ggplot(chess_dataset, aes(x=(Black.Rating), y=(Black.Centi.pawn.Loss))) +
+  geom_point(col="red",size=0.5)+
+     labs(title="ACCURACY OF GAMES")+
+     xlab("Black Rating")+
+    ylab("Average Centipawn Loss")
+
+ggplot(chess_dataset,aes(x=Opening.Ply)) +
+  geom_histogram(bins=28,binwidth=0.5,color="darkblue",fill="lightblue")+ 
+     labs(title="MAIN LINE THEORY")+
+     xlab("Number of moves played following theory")+
+    ylab("Number of games played")
+
+ggplot(chess_dataset, aes(x=Opening.Ply, y=White.Centi.pawn.Loss))+
+    geom_point()+
+    labs(title="ACCURACY OF GAMES",x="Opening Ply")+
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r}
+chess_dataset %>% 
+    select(Opening.Ply, White.Centi.pawn.Loss) %>%
+    group_by(Opening.Ply) %>% 
+    summarise(mean_wcpl = mean(White.Centi.pawn.Loss)) %>% 
+    ggplot(aes(Opening.Ply, mean_wcpl)) +
+    geom_line()+
+    geom_smooth() +
+    geom_point(size = 1) +
+    labs(title = "White's average centipawn loss when following theory",
+         x = "Number of moves following opening theory",
+         y = "White's Mean  Centipawn Loss")
+```
+```{r}
+chess_dataset %>% 
+    select(Opening.Ply, White.Centi.pawn.Loss) %>%
+    group_by(Opening.Ply) %>% 
+    summarise(mean_wcpl = mean(White.Centi.pawn.Loss),
+              sd_wcpl = sd(White.Centi.pawn.Loss)) %>% 
+    filter(!is.na(sd_wcpl))
+```
+
+
+```{r}
+df1 <- chess_dataset %>% 
+    select(White.s.Number.of.Inaccuracies, White.Centi.pawn.Loss)   %>%
+    group_by(White.s.Number.of.Inaccuracies) %>% 
+    summarise(mean_wcpl1 = mean(White.Centi.pawn.Loss)) 
+
+df2 <- chess_dataset %>% 
+    select(White.s.Number.of.Mistakes, White.Centi.pawn.Loss) %>%
+    group_by(White.s.Number.of.Mistakes) %>% 
+    summarise(mean_wcpl2 = mean(White.Centi.pawn.Loss)) 
+df3 <- chess_dataset %>% 
+    select(White.s.Number.of.Blunders, White.Centi.pawn.Loss) %>%
+    group_by(White.s.Number.of.Blunders) %>% 
+    summarise(mean_wcpl3 = mean(White.Centi.pawn.Loss)) 
+ ggplot(data=df1,aes(White.s.Number.of.Inaccuracies,mean_wcpl1)) +
+    geom_line()+
+    geom_smooth(aes(color="Yellow")) +
+     scale_color_identity(guide = "legend")+
+     geom_line(data=df2,aes(White.s.Number.of.Mistakes,mean_wcpl2),col="purple")+
+     geom_smooth(data=df2,aes(White.s.Number.of.Mistakes,mean_wcpl2,color="Orange"))+
+     scale_color_identity(guide = "legend")+
+     geom_line(data=df3,aes(White.s.Number.of.Blunders,mean_wcpl3),col="blue")+
+     geom_smooth(data=df3,aes(White.s.Number.of.Blunders,mean_wcpl3,color="Red"))+
+     scale_color_identity(breaks = c("Yellow", "Orange", "Red"),
+                          labels = c("Inaccuracies", "Mistakes", "Blunders"),guide = "legend")+
+    geom_point(size = 1) +
+    geom_point(data=df2,aes(White.s.Number.of.Mistakes,mean_wcpl2),size=1)+
+         geom_point(data=df3,aes(White.s.Number.of.Blunders,mean_wcpl3),size=1)+
+     labs(title = "Centipawn loss for Inaccuracies,Mistakes and Blunders",
+         x = "Counter",
+         y = "White's Mean  Centipawn Loss",
+         color="Deviation From Best Moves")
+ 
+ggsave(filename = "graph1.png",
+       path = "C:/Users/91974/Desktop/cmi study/Graphs/",
+       dpi = 300,
+       device = "png")
+```
+```{r}
+dF1 <- chess_dataset %>% 
+    select(Black.s.Number.of.Inaccuracies, White.Centi.pawn.Loss)   %>%
+    group_by(Black.s.Number.of.Inaccuracies) %>% 
+    summarise(mean_wBcpl1 = mean(White.Centi.pawn.Loss))
+dF2 <- chess_dataset %>% 
+    select(Black.s.Number.of.Mistakes, White.Centi.pawn.Loss)   %>%
+    group_by(Black.s.Number.of.Mistakes) %>% 
+    summarise(mean_wBcpl2 = mean(White.Centi.pawn.Loss)) 
+dF3 <- chess_dataset %>% 
+    select(Black.s.Number.of.Blunders, White.Centi.pawn.Loss)   %>%
+    group_by(Black.s.Number.of.Blunders) %>% 
+    summarise(mean_wBcpl3 = mean(White.Centi.pawn.Loss))
+ggplot(data=dF1,aes(Black.s.Number.of.Inaccuracies,mean_wBcpl1)) +
+    geom_line()+
+    geom_smooth(aes(color="Yellow")) +
+     scale_color_identity(guide = "legend")+
+     geom_line(data=dF2,aes(Black.s.Number.of.Mistakes,mean_wBcpl2),col="purple")+
+     geom_smooth(data=dF2,aes(Black.s.Number.of.Mistakes,mean_wBcpl2,color="Orange"))+
+     scale_color_identity(guide = "legend")+
+     geom_line(data=dF3,aes(Black.s.Number.of.Blunders,mean_wBcpl3),col="blue")+
+     geom_smooth(data=dF3,aes(Black.s.Number.of.Blunders,mean_wBcpl3,color="Red"))+
+     scale_color_identity(breaks = c("Yellow", "Orange", "Red"),
+                          labels = c("Inaccuracies", "Mistakes", "Blunders"),guide = "legend")+
+    geom_point(size = 1) +
+    geom_point(data=dF2,aes(Black.s.Number.of.Mistakes,mean_wBcpl2),size=1)+
+         geom_point(data=dF3,aes(Black.s.Number.of.Blunders,mean_wBcpl3),size=1)+
+     labs(title = "Centipawn loss for Inaccuracies,Mistakes and Blunders",
+         x = "Counter",
+         y = "White's Mean  Centipawn Loss",
+         color=" Black's Deviation From Best Moves")
+
+
+```
+```{r}
+dt1<-chess_dataset %>%
+    select(White.Rating,White.s.Number.of.Blunders) 
+dt2<-chess_dataset %>%
+    select(White.Rating,White.s.Number.of.Mistakes)
+dt3<-chess_dataset %>%
+    select(White.Rating,White.s.Number.of.Inaccuracies)
+ggplot(data=dt1,aes(White.Rating,White.s.Number.of.Blunders))+
+    geom_point(aes(color="Red"),size=0.5)+
+    geom_point(data=dt2,aes(White.Rating,White.s.Number.of.Mistakes,color="Blue"),size=0.5)+
+    geom_point(data=dt3,aes(White.Rating,White.s.Number.of.Inaccuracies,color="Green"),size=0.5)+
+    scale_color_identity(breaks = c("Red", "Blue", "Green"),
+                          labels = c("Blunders", "Mistakes", "Inaccuracies"),guide = "legend")
+    
+```
+```{r}
+x1<-chess_dataset %>%
+    select(White.s.Number.of.Blunders)
+x1["Counter"]<-(c(rep(1,18637)))
+x3<-chess_dataset %>%
+    select(White.s.Number.of.Mistakes)
+x3["Counter"]<-(c(rep(2,18637)))
+x5<-chess_dataset %>%
+    select(White.s.Number.of.Inaccuracies)
+x5["Counter"]<-(c(rep(3,18637)))
+colnames(x1)<-c("Value","Counter")
+colnames(x3)<-c("Value","Counter")
+colnames(x5)<-c("Value","Counter")
+x2<-rbind(x1,x3)  
+x4<-rbind(x2,x5)
+
+x4 %>%
+    ggplot(aes(Value,group=Counter,fill=as.factor(Counter)))+
+    geom_histogram(bins=28,binwidth=0.5,color="darkblue")+
+    guides(color = guide_legend(title = "Deviations from Best Move"))+
+    scale_fill_discrete(labels=c("Blunders", "Mistakes","Inaccuracies")) +
+    labs(y="No of Games",x="No of bad moves",fill="Type of\nBad Moves",title="Proportion of Games by no of Bad Moves")
+    
+    ## scale_x_discrete(limits=c("Blunders", "Mistakes", "Inaccuracies"))
+##x4 %>%
+  ##  ggplot(aes(x="",y=Value,fill=as.factor(Counter)))
+    ##geom_bar(stat="identity", width=1) +
+  #coord_polar("y", start=0)
+```
+
+
+```{r}
+y1<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "C0") | str_detect(Opening.ECO, "C1")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl = mean(White.Centi.pawn.Loss))
+ctm<-array(0,6)
+ctm[1]<-mean(y1$avg_wcpl)    
+y2<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "C3")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl1 = mean(White.Centi.pawn.Loss))
+ctm[2]<-mean(y2$avg_wcpl1)
+
+y3<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "C5")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl2 = mean(White.Centi.pawn.Loss))
+ctm[3]<-mean(y3$avg_wcpl2)
+
+y4<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "C6")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl3 = mean(White.Centi.pawn.Loss))
+ctm[4]<-mean(y4$avg_wcpl3)
+
+y5<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "A1") | str_detect(Opening.ECO, "A2")|str_detect(Opening.ECO, "A3")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl4 = mean(White.Centi.pawn.Loss))
+ctm[5]<-mean(y5$avg_wcpl4)
+
+y6<-chess_dataset %>% 
+    filter(str_detect(Opening.ECO, "A4") | str_detect(Opening.ECO, "A5")|str_detect(Opening.ECO, "A6")|str_detect(Opening.ECO, "A7")|str_detect(Opening.ECO, "A8")) %>% 
+    group_by(Opening.ECO) %>% 
+    summarise(avg_wcpl5 = mean(White.Centi.pawn.Loss))
+ctm[6]<-mean(y6$avg_wcpl5)
+BOX<-data.frame(ctm)
+BOX["Opening"]<-c("French Defence","King's Gambit","Italian","Spanish","English","Queen Pawn")
+colnames(BOX)<-c("White's average Centipawn Loss","Opening")
+
+BOX %>%
+    arrange(`White's average Centipawn Loss`) %>% 
+    mutate(Opening = fct_reorder(Opening, `White's average Centipawn Loss`)) %>% 
+    ggplot(aes(Opening,`White's average Centipawn Loss`,color=Opening))+
+    geom_point(size=4)+
+    labs(x = "Opening Types",title="Comparison of White's Openings")
+
+```
+
+```{r}
+x = c("C123", "D234")
+str_detect(x, "French Defence")
+```
+
+
+
